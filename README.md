@@ -1,1 +1,1 @@
-# DPGTest
+## This is a sample project for the DPG technical interview exercise

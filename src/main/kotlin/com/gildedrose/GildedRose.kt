@@ -16,7 +16,7 @@ class GildedRose(val items: Array<Item>) {
                         startsWith(AGED_BRIE_ID) -> updateBrieQuality(item)
                         startsWith(BACKSTAGE_PASSES_ID) -> updateBackstagePassQuality(item)
                         startsWith(CONJURED_ID) -> updateConjuredQuality(item)
-                        else -> updateNormalItemQuality(item)
+                        else -> updateRegularItemQuality(item)
                     }
                 }
             }
@@ -27,16 +27,16 @@ class GildedRose(val items: Array<Item>) {
      * Checks that the input has no inconsistencies according to the requirements.
      */
     private fun hasNoInconsistencies(item: Item): Boolean =
-            (item.quality <=50 || item.name.contains(SULFURAS_ID)) && item.quality >= 0
+            (item.quality <= HIGHEST_QUALITY || item.name.contains(SULFURAS_ID)) && item.quality >= LOWEST_QUALITY
 
     /**
-     * Updates the quality of a normal item considering normal everything that doesn't have any special quality treatment.
+     * Updates the quality of a regular item considering normal everything that doesn't have any special quality treatment.
      * The requirement says quality gets every day lower, but not the amount per day, so we assume a loss of 1 quality unit per day.
      */
-    private fun updateNormalItemQuality(item: Item) {
+    private fun updateRegularItemQuality(item: Item) {
         with(item) {
-            if (quality > 0) {
-                if (sellIn < 0 && quality > 1) {
+            if (quality > LOWEST_QUALITY) {
+                if (sellIn < LOWEST_QUALITY && quality > 1) {
                     quality -= 2
                 } else {
                     quality--
@@ -50,13 +50,13 @@ class GildedRose(val items: Array<Item>) {
      */
     private fun updateConjuredQuality(item: Item) {
         with(item) {
-            if (quality > 0) {
-                if (quality == 1) quality-- else {
-                    if (sellIn < 0) {
-                        if (quality >= 4) quality -= 4 else quality = 0
-                    } else {
-                        quality -= 2
-                    }
+            if (quality > LOWEST_QUALITY) {
+                if (quality == 1 || (sellIn < 0 && quality < 4)) {
+                    quality = LOWEST_QUALITY
+                } else if (sellIn < 0 && quality >= 4) {
+                    quality -= 4
+                } else {
+                    quality -= 2
                 }
             }
         }
@@ -69,11 +69,11 @@ class GildedRose(val items: Array<Item>) {
      */
     private fun updateBackstagePassQuality(item: Item) {
         with(item) {
-            if(quality < 50) {
+            if (quality < HIGHEST_QUALITY) {
                 quality = when {
-                    sellIn <= -1 -> 0
-                    sellIn in 0..5 -> if(quality < 48) quality + 3 else 50
-                    sellIn in 6..10 -> if(quality < 49) quality + 2 else 50
+                    sellIn <= -1 -> LOWEST_QUALITY
+                    sellIn in 0..5 -> if (quality < 48) quality + 3 else HIGHEST_QUALITY
+                    sellIn in 6..10 -> if (quality < 49) quality + 2 else HIGHEST_QUALITY
                     sellIn > 10 -> quality + 1
                     else -> quality
                 }
@@ -87,11 +87,7 @@ class GildedRose(val items: Array<Item>) {
      * of 1 quality unit per day.
      */
     private fun updateBrieQuality(item: Item) {
-        with(item) {
-            if (quality < 50) {
-                quality++
-            }
-        }
+        if (item.quality < HIGHEST_QUALITY) item.quality++
     }
 
     companion object {
@@ -99,5 +95,7 @@ class GildedRose(val items: Array<Item>) {
         const val AGED_BRIE_ID = "Aged Brie"
         const val BACKSTAGE_PASSES_ID = "Backstage passes"
         const val CONJURED_ID = "Conjured"
+        const val HIGHEST_QUALITY = 50
+        const val LOWEST_QUALITY = 0
     }
 }
